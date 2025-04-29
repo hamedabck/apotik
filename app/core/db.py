@@ -9,7 +9,7 @@ def get_database_config():
     Supports both DATABASE_URL and individual PostgreSQL settings.
     """
     # Check if DATABASE_URL is set
-    database_url = os.getenv('DATABASE_URL')
+    database_url = os.getenv('sqlite:///db.sqlite3')
     
     if database_url:
         # Use dj_database_url to parse the DATABASE_URL
@@ -21,6 +21,5 @@ def get_database_config():
         # Use SQLite as default
         return {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': (Path(__file__).resolve().parent.parent.parent /
-                    'db.sqlite3'),
+            'NAME': (Path(__file__).resolve().parent.parent.parent / 'db.sqlite3'),
         } 
