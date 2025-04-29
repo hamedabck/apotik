@@ -12,21 +12,6 @@ jobs:
     name: Test and Lint
     runs-on: ubuntu-24.04
     
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +47,6 @@ jobs:
         run: |
           docker compose run --rm \
             -e CI=true \
-            -e DATABASE_URL=postgres://test_user:test_password@postgres:5432/test_db \
             app sh -c "python manage.py test --parallel --keepdb"
 
       - name: Run Linting

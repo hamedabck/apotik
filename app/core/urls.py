@@ -21,8 +21,10 @@ from django.http import HttpResponse
 def health_check(request):
     return HttpResponse("OK")
 
+
 def home(request):
     return HttpResponse("Welcome to Django! in DOCKER!!!")
+
 
 urlpatterns = [
     path('', home, name='home'),  # Root URL pattern

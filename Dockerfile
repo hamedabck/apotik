@@ -20,11 +20,9 @@ RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev \
     libffi-dev \
-    postgresql-dev \
     libxml2-dev \
     libxslt-dev \
     && apk add --no-cache \
-    postgresql-libs \
     libxml2 \
     libxslt \
     curl
