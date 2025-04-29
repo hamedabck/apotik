@@ -1,4 +1,4 @@
-FROM python:3.10-alpine
+FROM python:3.10-alpine as builder
 
 LABEL maintainer="apotik"
 LABEL description="Django application with Python 3.10"
@@ -8,9 +8,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Create a non-root user
-RUN adduser --disabled-password --no-create-home django-user
 
 # Set working directory
 WORKDIR /app
@@ -43,11 +40,38 @@ RUN if [ "$DEV" = "true" ]; then \
     fi
 
 # Copy project files
-COPY --chown=django-user:django-user ./app .
+COPY ./app .
 
 # Clean up
 RUN apk del .build-deps && \
     rm -rf /root/.cache /tmp/*
+
+# Production stage
+FROM python:3.10-alpine as production
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Create a non-root user
+RUN adduser --disabled-password --no-create-home django-user
+
+# Set working directory
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    libxml2 \
+    libxslt \
+    curl
+
+# Create and activate virtual environment
+RUN python -m venv /py
+ENV PATH="/py/bin:$PATH"
+
+# Copy dependencies from builder
+COPY --from=builder /py /py
+COPY --from=builder /app /app
 
 # Switch to non-root user
 USER django-user
@@ -58,3 +82,6 @@ EXPOSE 8000
 # Set healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Default command
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

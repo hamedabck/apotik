@@ -4,10 +4,15 @@ services:
       context: .
       args:
         - DEV=true
+      target: ${TARGET:-builder}
     ports:
       - "8000:8000"
     volumes:
       - ./app:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings
+      - PYTHONUNBUFFERED=1
+      - DEBUG=0
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
