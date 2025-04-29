@@ -2,6 +2,7 @@ import os
 import dj_database_url
 from pathlib import Path
 
+
 def get_database_config():
     """
     Get database configuration from environment variables.
@@ -20,5 +21,6 @@ def get_database_config():
         # Use SQLite as default
         return {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': Path(__file__).resolve().parent.parent.parent / 'db.sqlite3',
+            'NAME': (Path(__file__).resolve().parent.parent.parent / 
+                    'db.sqlite3'),
         } 
