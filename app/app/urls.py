@@ -1,8 +1,8 @@
 """
-URL configuration for core project.
+URL configuration for app project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
+    https://docs.djangoproject.com/en/4.2/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -16,19 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.http import HttpResponse
-
-
-def health_check(request):
-    return HttpResponse("OK")
-
-
-def home(request):
-    return HttpResponse("Welcome to Django! in DOCKER!!!")
-
 
 urlpatterns = [
-    path('', home, name='home'),  # Root URL pattern
     path('admin/', admin.site.urls),
-    path('health/', health_check, name='health_check'),
 ]

@@ -1,87 +1,45 @@
-FROM python:3.10-alpine as builder
-
+FROM python:3.9-alpine3.18
 LABEL maintainer="apotik"
-LABEL description="Django application with Python 3.10"
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Set working directory
-WORKDIR /app
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH=/app
 
 # Install system dependencies
-RUN apk add --no-cache --virtual .build-deps \
+RUN apk add --no-cache \
+    postgresql-client \
+    postgresql-dev \
     gcc \
+    python3-dev \
     musl-dev \
     libffi-dev \
-    libxml2-dev \
-    libxslt-dev \
-    && apk add --no-cache \
-    libxml2 \
-    libxslt \
-    curl
+    zlib-dev \
+    jpeg-dev \
+    && python -m venv /py \
+    && /py/bin/pip install --upgrade pip setuptools wheel
 
-# Create and activate virtual environment
-RUN python -m venv /py
-ENV PATH="/py/bin:$PATH"
+# Copy requirements first to leverage Docker cache
+COPY ./requirements.txt /tmp/requirements.txt
+COPY ./requirements.dev.txt /tmp/requirements.dev.txt
 
-# Upgrade pip and install dependencies
-COPY requirements.txt requirements.dev.txt ./
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install base requirements
+RUN /py/bin/pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Install dev dependencies if needed
-ARG DEV=false
-RUN if [ "$DEV" = "true" ]; then \
-    pip install --no-cache-dir -r requirements.dev.txt; \
-    fi
-
-# Copy project files
-COPY ./app .
-
-# Clean up
-RUN apk del .build-deps && \
-    rm -rf /root/.cache /tmp/*
-
-# Production stage
-FROM python:3.10-alpine as production
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Create a non-root user
-RUN adduser --disabled-password --no-create-home django-user
-
-# Set working directory
+# Copy app code
+COPY ./app /app
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    libxml2 \
-    libxslt \
-    curl
-
-# Create and activate virtual environment
-RUN python -m venv /py
-ENV PATH="/py/bin:$PATH"
-
-# Copy dependencies from builder
-COPY --from=builder /py /py
-COPY --from=builder /app /app
-
-# Switch to non-root user
-USER django-user
-
-# Expose port
 EXPOSE 8000
 
-# Set healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
+ARG DEV=false
+RUN if [ $DEV = "true" ]; \
+    then /py/bin/pip install --no-cache-dir -r /tmp/requirements.dev.txt; \
+    fi \
+    && rm -rf /tmp \
+    && adduser \
+        --disabled-password \
+        --no-create-home \
+        django-user
 
-# Default command
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENV PATH="/py/bin:$PATH"
+
+USER django-user
